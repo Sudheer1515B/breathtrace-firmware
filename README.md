@@ -51,6 +51,13 @@ pio device monitor           # 115200 baud, prints per-panel raw reads
 pio test -e native           # host-side classifier tests
 ```
 
+**No PlatformIO?** `sh tools/check.sh` syntax-checks every source against stub
+headers (both Arduino core 2.x and 3.x) and runs the classifier tests with plain
+g++. It exits non-zero on failure. It is not a substitute for `pio run` — it
+never touches a real toolchain, linker or the ESP32 headers — but it catches
+syntax errors, bad signatures and broken classifier maths. `tools/stubs/unity.h`
+is a shim so `test/test_classifier` has two runners rather than two copies.
+
 TFT_eSPI is configured entirely through `build_flags` in `platformio.ini`, so
 no library file needs hand-editing. Those pins must stay in step with
 `include/config.h`.
