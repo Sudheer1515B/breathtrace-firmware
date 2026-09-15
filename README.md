@@ -30,7 +30,7 @@ Panels: **THC**, **OPI** (morphine/opiates), **MET** (methamphetamine),
 | Function | Part |
 |---|---|
 | MCU | ESP32-WROOM-32 |
-| Display | ILI9488 480×320 SPI TFT (~4") |
+| Display | **1.8" ST7735 SPI TFT, 128×160** (or ILI9488 480×320 — see Build) |
 | Breath validity | MH-Z19B NDIR CO₂ sensor (UART) |
 | Breath counting | analog differential-pressure sensor |
 | Strip reader | 8 photodiodes → CD74HC4051 mux, white LED bar |
@@ -44,7 +44,8 @@ Full wiring table: **[docs/PINOUT.md](docs/PINOUT.md)**.
 ## Build
 
 ```sh
-pio run                      # compile
+pio run                      # compile for the 1.8" ST7735 (default)
+pio run -e ili9488           # ...or for the ~4" ILI9488
 pio run -t upload            # flash
 pio device monitor           # 115200 baud, prints per-panel raw reads
 pio test -e native           # host-side classifier tests
@@ -53,6 +54,17 @@ pio test -e native           # host-side classifier tests
 TFT_eSPI is configured entirely through `build_flags` in `platformio.ini`, so
 no library file needs hand-editing. Those pins must stay in step with
 `include/config.h`.
+
+**Both panels run one UI.** `src/ui.cpp` lays its 20×7 character grid out from
+`tft.width()` / `tft.height()` at startup, picking the font and pitches to
+suit — font 1 (6×8) on the ST7735, font 4 (26px) on the ILI9488. There is no
+second UI implementation to keep in sync.
+
+**If the ST7735 image is offset by a few pixels or the colours look inverted**,
+change `ST7735_GREENTAB3` in `platformio.ini`. These modules ship with several
+different panel tabs (`GREENTAB`, `GREENTAB2`, `REDTAB`, `BLACKTAB`) that need
+different row/column offsets, and there is no way to detect which you have
+except by trying them.
 
 ## How the decision is made
 

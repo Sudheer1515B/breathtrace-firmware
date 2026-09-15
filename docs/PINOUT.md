@@ -1,5 +1,7 @@
 # Pinout — ESP32-WROOM-32
 
+Pins are common to both display builds except TFT RST, noted below.
+
 Authoritative source is `include/config.h`. The TFT pins are duplicated in
 `platformio.ini` build flags because TFT_eSPI is configured at compile time —
 **change both together.**
@@ -10,7 +12,7 @@ Authoritative source is `include/config.h`. The TFT pins are duplicated in
 | TFT MOSI | 23 | out | |
 | TFT CS | 13 | out | |
 | TFT DC | 14 | out | |
-| TFT RST | — | — | tie to EN |
+| TFT RST | 19 | out | ST7735 build only; ILI9488 build ties it to EN |
 | TFT backlight | — | — | tie to 3V3 |
 | CO₂ RX | 16 | in | to MH-Z19B **TX** |
 | CO₂ TX | 17 | out | to MH-Z19B **RX** |
@@ -36,8 +38,9 @@ Authoritative source is `include/config.h`. The TFT pins are duplicated in
   on these pins.
 - **No strapping pins are used as outputs** (0, 2, 5, 12, 15 are avoided), so
   boot mode and the boot log are unaffected.
-- GPIO 19 is left free — it is the VSPI MISO pin, available if a display read
-  path or a second SPI peripheral is added later.
+- GPIO 19 carries the display reset on the ST7735 build. The ILI9488 build
+  leaves it free (that panel is happy with RST tied to EN), so it is available
+  there for a display read path or a second SPI peripheral.
 
 ## Mux channel map
 

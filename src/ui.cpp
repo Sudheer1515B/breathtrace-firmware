@@ -8,20 +8,42 @@ namespace bt {
 
 static TFT_eSPI tft;
 
-static constexpr int COLS      = 20;
-static constexpr int COL_PITCH = 21;
-static constexpr int MARGIN_X  = 30;
-static constexpr int FONT      = 4;
-static constexpr int GLYPH_H   = 26;
+static constexpr int COLS = 20;
 
 // Nine paint slots: 7 text rows and 2 rules, indexed in screen order.
 static constexpr int SLOT_COUNT = 9;
-// Slots 2 and 7 are the horizontal rules; the rest carry text.
-static constexpr int SLOT_Y[SLOT_COUNT] = {18, 52, 88, 96, 130, 164, 198, 236, 244};
+static constexpr bool SLOT_IS_RULE[SLOT_COUNT] =
+    {false, false, true, false, false, false, false, true, false};
+
+// The 20x7 grid is laid out from the panel's actual size at begin(), so the
+// same code drives the ~4" ILI9488 (480x320) and the 1.8" ST7735 (160x128)
+// without a second UI implementation. Only the font and the pitches change.
+static int g_font = 4, g_glyph_h = 26, g_col_pitch = 21, g_margin_x = 30, g_rule_h = 3;
+static int g_slot_y[SLOT_COUNT] = {0};
+
+static void layout(int w, int h) {
+    if (w >= 400)      { g_font = 4; g_glyph_h = 26; }   // ILI9488 and larger
+    else if (w >= 240) { g_font = 2; g_glyph_h = 16; }   // mid-size panels
+    else               { g_font = 1; g_glyph_h = 8;  }   // ST7735 1.8"
+
+    g_col_pitch = (w * 92 / 100) / COLS;
+    g_margin_x = (w - g_col_pitch * COLS) / 2;
+    g_rule_h = (g_glyph_h >= 16) ? 3 : 2;
+
+    const int rule_band = g_glyph_h / 2 + g_rule_h;
+    const int pitch = (h * 94 / 100 - 2 * rule_band) / 7;
+    int y = (h - (7 * pitch + 2 * rule_band)) / 2;
+    for (int i = 0; i < SLOT_COUNT; ++i) {
+        g_slot_y[i] = y;
+        y += SLOT_IS_RULE[i] ? rule_band : pitch;
+    }
+}
 
 void Ui::begin() {
     tft.init();
-    tft.setRotation(1);                 // landscape, 480x320
+    tft.setRotation(1);                 // landscape for both supported panels
+    tft.setTextSize(1);
+    layout(tft.width(), tft.height());
     c_bg_     = tft.color565(5, 9, 10);
     c_orange_ = tft.color565(234, 155, 86);
     c_brick_  = tft.color565(177, 87, 81);
@@ -30,7 +52,7 @@ void Ui::begin() {
     c_dim_    = tft.color565(110, 138, 140);
     c_rule_   = tft.color565(48, 66, 68);
     tft.fillScreen(c_bg_);
-    tft.setTextFont(FONT);
+    tft.setTextFont(g_font);
     invalidate_();
 }
 
@@ -44,8 +66,8 @@ void Ui::invalidate_() {
 
 void Ui::rule_(int index) {
     if (cache_valid_[index]) return;
-    const int y = SLOT_Y[index];
-    tft.fillRect(MARGIN_X, y, COLS * COL_PITCH, 3, c_rule_);
+    const int y = g_slot_y[index];
+    tft.fillRect(g_margin_x, y, COLS * g_col_pitch, g_rule_h, c_rule_);
     cache_valid_[index] = true;
 }
 
@@ -72,12 +94,13 @@ void Ui::row_(int index, const Seg* segs, int n) {
         return;
     }
 
-    const int y = SLOT_Y[index];
-    tft.fillRect(0, y, tft.width(), GLYPH_H, c_bg_);
+    const int y = g_slot_y[index];
+    tft.fillRect(0, y, tft.width(), g_glyph_h, c_bg_);
     for (int i = 0; i < COLS; ++i) {
         if (line[i] == ' ') continue;
         tft.setTextColor(cols[i], c_bg_);
-        tft.drawChar(static_cast<uint16_t>(line[i]), MARGIN_X + i * COL_PITCH, y, FONT);
+        tft.drawChar(static_cast<uint16_t>(line[i]),
+                     g_margin_x + i * g_col_pitch, y, g_font);
     }
 
     memcpy(cache_[index], line, COLS);
