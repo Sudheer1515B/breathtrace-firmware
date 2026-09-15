@@ -8,6 +8,10 @@ static constexpr uint8_t PUMP_ELUTE_DUTY = 190;
 
 // Two consecutive kinetic reads whose control-line strength moves less than
 // this are taken as the development endpoint.
+// PROVENANCE: both are guesses, as is PUMP_ELUTE_DUTY above. ENDPOINT_DELTA
+// needs to sit above the measured optical read noise (calib::SIGMA_INTENSITY)
+// or the endpoint will trigger on noise alone; measure sigma first, then set
+// this to a few times it.
 static constexpr float ENDPOINT_DELTA = 0.010f;
 static constexpr int   ENDPOINT_STABLE_READS = 2;
 

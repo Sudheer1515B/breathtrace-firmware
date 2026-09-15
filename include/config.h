@@ -55,6 +55,15 @@ constexpr uint8_t MUX_CONTROL[PANEL_COUNT] = {1, 3, 5, 7};
 extern const char* const PANEL_NAME[PANEL_COUNT];   // "THC", "OPI", "MET", "AMP"
 
 // ---------------------------------------------------------------- timing
+// PROVENANCE: these are engineering estimates, not measured or derived values.
+// Only BREATHS_REQUIRED below has an external basis (the published SensAbues
+// protocol). The rest were chosen as plausible round numbers to get a working
+// sequence, and every one of them should be confirmed on a bench:
+//   PREHEAT_MS       how long the line actually takes to stop condensing
+//   ELUTE_MS         how long the pump needs to wash the filter onto the strip
+//   INCUBATE_MIN/MAX the real development window for the strip lot in use
+//   READER_SETTLE_US mux settling plus photodiode rise time, per your optics
+// Do not present any of these as determined figures.
 namespace timing {
 constexpr uint32_t PREHEAT_MS       = 25000;   // warm the sample line before collecting
 constexpr uint32_t COLLECT_MAX_MS   = 240000;  // hard stop on the collection window
@@ -66,6 +75,11 @@ constexpr uint32_t READER_SETTLE_US = 2500;    // mux settle + photodiode rise b
 }  // namespace timing
 
 // ---------------------------------------------------------------- sampling
+// PROVENANCE: ADC_MAX is a fact (12-bit ADC). The rest are starting points.
+// ADC_AVERAGES and LED_DUTY interact with SIGMA_INTENSITY in the calib block
+// below — more averaging and a brighter LED both lower read noise, so if the
+// measured sigma comes out too high, these are the first knobs to turn before
+// accepting a wider inconclusive band.
 namespace sampling {
 constexpr int ADC_AVERAGES   = 64;    // per channel per read, to beat ESP32 ADC noise
 constexpr int ADC_MAX        = 4095;  // 12-bit
